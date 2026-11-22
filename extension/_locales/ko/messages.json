@@ -1,0 +1,140 @@
+{
+   "backLive": {
+      "message": "라이브"
+   },
+   "castButton": {
+      "message": "이 탭 전송"
+   },
+   "castFromStart": {
+      "message": "처음부터"
+   },
+   "castUrlButton": {
+      "message": "이 URL 전송"
+   },
+   "castingTo": {
+      "message": "전송 중:"
+   },
+   "detectEnabledReload": {
+      "message": "감지가 활성화되었습니다. 페이지를 새로고침(또는 영상 재생)한 후 전송하세요."
+   },
+   "enableDetect": {
+      "message": "소스 감지 활성화"
+   },
+   "enableDetectHint": {
+      "message": "소스 감지를 활성화한 후 페이지를 새로고침하세요."
+   },
+   "errBlobSource": {
+      "message": "이 페이지의 동영상에는 전송할 수 있는 주소가 없습니다."
+   },
+   "errCantCast": {
+      "message": "이 탭을 전송할 수 없습니다."
+   },
+   "errDrm": {
+      "message": "이 스트림은 DRM으로 보호되어 있어 전송할 수 없습니다."
+   },
+   "errNoHelper": {
+      "message": "도우미에 연결할 수 없습니다."
+   },
+   "errStreamUnavailable": {
+      "message": "이 스트림을 열 수 없습니다. 오프라인이거나 지역 제한 또는 지원되지 않는 형식일 수 있습니다."
+   },
+   "extDescription": {
+      "message": "현재 탭의 스트림을 로컬 네트워크의 DLNA 및 Google Cast 기기로 전송합니다."
+   },
+   "getHelper": {
+      "message": "헬퍼 받기"
+   },
+   "helperHint": {
+      "message": "로컬 헬퍼를 설치하거나, 실행한 뒤 다시 시도하세요."
+   },
+   "helperOutdated": {
+      "message": "새 도우미 버전이 있습니다."
+   },
+   "helperTitle": {
+      "message": "도우미가 감지되지 않았습니다."
+   },
+   "manualTitle": {
+      "message": "스트림"
+   },
+   "manualToggle": {
+      "message": "스트림 주소 전송"
+   },
+   "needTokenHint": {
+      "message": "옵션에서 도우미의 토큰을 붙여넣으세요."
+   },
+   "needTokenTitle": {
+      "message": "토큰이 설정되지 않았습니다."
+   },
+   "noSourceFound": {
+      "message": "감지된 비디오 소스가 없습니다. 영상을 재생한 후 다시 시도하세요."
+   },
+   "openOptions": {
+      "message": "옵션 열기"
+   },
+   "optionsHelp": {
+      "message": "도우미의 토큰을 붙여넣으세요. 홈 폴더의 ~/.streaming-lan-cast/token 파일에 있습니다(도우미 시작 시에도 표시됩니다)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast 설정"
+   },
+   "optionsTokenLabel": {
+      "message": "도우미 토큰"
+   },
+   "paste": {
+      "message": "붙여넣기"
+   },
+   "pickerPrompt": {
+      "message": "현재 탭을 전송할 위치를 선택하세요"
+   },
+   "qualityBest": {
+      "message": "사용 가능한 최고 화질"
+   },
+   "qualityLabel": {
+      "message": "화질"
+   },
+   "retry": {
+      "message": "다시 시도"
+   },
+   "rewindHere": {
+      "message": "현재 위치"
+   },
+   "rewindStart": {
+      "message": "처음"
+   },
+   "save": {
+      "message": "저장"
+   },
+   "saved": {
+      "message": "저장됨 ✓"
+   },
+   "savedNoConn": {
+      "message": "저장됨(도우미에 연결할 수 없음)"
+   },
+   "savedRejected": {
+      "message": "토큰이 거부됨(저장되지 않음)"
+   },
+   "searching": {
+      "message": "기기 검색 중"
+   },
+   "sourceDetected": {
+      "message": "소스 감지됨"
+   },
+   "sourceNone": {
+      "message": "아직 비디오 소스가 감지되지 않음"
+   },
+   "stopButton": {
+      "message": "중지"
+   },
+   "themeAuto": {
+      "message": "테마: 자동"
+   },
+   "themeDark": {
+      "message": "테마: 어둡게"
+   },
+   "themeLight": {
+      "message": "테마: 밝게"
+   },
+   "updateHelper": {
+      "message": "업데이트"
+   }
+}

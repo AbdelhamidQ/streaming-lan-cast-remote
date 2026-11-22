@@ -1,0 +1,140 @@
+{
+   "backLive": {
+      "message": "Ao vivo"
+   },
+   "castButton": {
+      "message": "Transmitir esta aba"
+   },
+   "castFromStart": {
+      "message": "Do início"
+   },
+   "castUrlButton": {
+      "message": "Transmitir esta URL"
+   },
+   "castingTo": {
+      "message": "Transmitindo para"
+   },
+   "detectEnabledReload": {
+      "message": "Detecção ativada. Recarregue a página (ou inicie o vídeo) e transmita."
+   },
+   "enableDetect": {
+      "message": "Ativar detecção de fontes"
+   },
+   "enableDetectHint": {
+      "message": "Ative a detecção de fontes e recarregue a página."
+   },
+   "errBlobSource": {
+      "message": "O vídeo desta página não tem um endereço que possa ser transmitido."
+   },
+   "errCantCast": {
+      "message": "Não é possível transmitir esta aba."
+   },
+   "errDrm": {
+      "message": "Este stream é protegido por DRM, então não pode ser transmitido."
+   },
+   "errNoHelper": {
+      "message": "Não foi possível contatar o auxiliar."
+   },
+   "errStreamUnavailable": {
+      "message": "Não foi possível abrir este stream. Ele pode estar offline, bloqueado por região ou não ser compatível."
+   },
+   "extDescription": {
+      "message": "Transmita o stream da aba atual para um dispositivo DLNA ou Google Cast na sua rede local."
+   },
+   "getHelper": {
+      "message": "Baixar o auxiliar"
+   },
+   "helperHint": {
+      "message": "Instale o auxiliar local, ou inicie-o e tente novamente."
+   },
+   "helperOutdated": {
+      "message": "Há uma nova versão do auxiliar."
+   },
+   "helperTitle": {
+      "message": "Auxiliar não detectado."
+   },
+   "manualTitle": {
+      "message": "Transmissão"
+   },
+   "manualToggle": {
+      "message": "Transmitir um endereço de stream"
+   },
+   "needTokenHint": {
+      "message": "Cole o token do auxiliar nas opções."
+   },
+   "needTokenTitle": {
+      "message": "Token não configurado."
+   },
+   "noSourceFound": {
+      "message": "Nenhuma fonte de vídeo detectada. Reproduza o vídeo e tente novamente."
+   },
+   "openOptions": {
+      "message": "Abrir opções"
+   },
+   "optionsHelp": {
+      "message": "Cole o token do auxiliar. Você o encontra no arquivo ~/.streaming-lan-cast/token na sua pasta de usuário (o auxiliar também o mostra ao iniciar)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast: Configurações"
+   },
+   "optionsTokenLabel": {
+      "message": "Token do auxiliar"
+   },
+   "paste": {
+      "message": "Colar"
+   },
+   "pickerPrompt": {
+      "message": "Escolha para onde transmitir a aba atual"
+   },
+   "qualityBest": {
+      "message": "Melhor disponível"
+   },
+   "qualityLabel": {
+      "message": "Qualidade"
+   },
+   "retry": {
+      "message": "Tentar novamente"
+   },
+   "rewindHere": {
+      "message": "Posição"
+   },
+   "rewindStart": {
+      "message": "Início"
+   },
+   "save": {
+      "message": "Salvar"
+   },
+   "saved": {
+      "message": "Salvo ✓"
+   },
+   "savedNoConn": {
+      "message": "Salvo (auxiliar inacessível)"
+   },
+   "savedRejected": {
+      "message": "Token rejeitado, não salvo"
+   },
+   "searching": {
+      "message": "Procurando dispositivos..."
+   },
+   "sourceDetected": {
+      "message": "Fonte detectada"
+   },
+   "sourceNone": {
+      "message": "Nenhuma fonte de vídeo detectada ainda"
+   },
+   "stopButton": {
+      "message": "Parar"
+   },
+   "themeAuto": {
+      "message": "Tema: automático"
+   },
+   "themeDark": {
+      "message": "Tema: escuro"
+   },
+   "themeLight": {
+      "message": "Tema: claro"
+   },
+   "updateHelper": {
+      "message": "Atualizar"
+   }
+}

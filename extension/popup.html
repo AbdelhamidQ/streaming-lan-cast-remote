@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg:#16181c; --fg:#e6e6e6; --muted:#8a8f98; --name:#ffffff;
+    --card:#1c1f24; --border:#2a2e35; --hover-border:#3a4049;
+    --accent:#2563eb; --accent-fg:#ffffff; --ghost:#2a2e35; --danger:#b91c1c;
+    --sel-border:#16a34a; --sel-bg:#15241a;
+  }
+  :root[data-theme="light"] {
+    --bg:#ffffff; --fg:#1a1d23; --muted:#6b7280; --name:#111418;
+    --card:#f3f4f6; --border:#e2e5ea; --hover-border:#c7ccd4;
+    --accent:#2563eb; --accent-fg:#ffffff; --ghost:#e5e7eb; --danger:#dc2626;
+    --sel-border:#16a34a; --sel-bg:#e8f6ec;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      --bg:#ffffff; --fg:#1a1d23; --muted:#6b7280; --name:#111418;
+      --card:#f3f4f6; --border:#e2e5ea; --hover-border:#c7ccd4;
+      --accent:#2563eb; --accent-fg:#ffffff; --ghost:#e5e7eb; --danger:#dc2626;
+      --sel-border:#16a34a; --sel-bg:#e8f6ec;
+    }
+  }
+  body {
+    width:332px; margin:0; padding:12px;
+    font:13px/1.4 system-ui, sans-serif;
+    background:var(--bg); color:var(--fg);
+  }
+  .bar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  h1 { font-size:14px; margin:0; display:flex; align-items:center; gap:6px; }
+  h1 .dot { width:8px; height:8px; border-radius:50%; background:var(--border); }
+  h1.live .dot { background:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.25); }
+  .themebtn {
+    width:28px; height:28px; flex:none; padding:0; border:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--ghost); color:var(--fg); cursor:pointer;
+  }
+  .themebtn svg { width:16px; height:16px; }
+  .muted { color:var(--muted); font-size:12px; }
+  #devices { display:flex; flex-direction:column; gap:4px; margin:8px 0; max-height:160px; overflow:auto; }
+  label.dev {
+    display:flex; align-items:center; gap:8px; padding:7px 8px;
+    border:1px solid var(--border); border-radius:8px; cursor:pointer;
+    animation: fadein .25s ease; user-select:none;
+  }
+  label.dev:hover { border-color:var(--hover-border); background:var(--card); }
+  label.dev.sel { border-color:var(--sel-border); background:var(--sel-bg); }
+  label.dev .name { font-weight:600; }
+  label.dev .model { color:var(--muted); font-size:11px; margin-left:auto; }
+  label.dev .ways { display:flex; gap:2px; }
+  label.dev .way { font-size:10px; line-height:1; padding:3px 6px; border:1px solid var(--border);
+                   border-radius:6px; background:transparent; color:var(--muted); cursor:pointer; user-select:none; }
+  label.dev .way.on { border-color:var(--sel-border); color:var(--fg); background:var(--sel-bg); }
+  @keyframes fadein { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+  .pickhead { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .spin { width:13px; height:13px; border:2px solid var(--border); border-top-color:var(--accent);
+          border-radius:50%; opacity:0; transition:opacity .15s; flex:none; }
+  .spin.on { opacity:1; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ph { padding:10px 4px; }
+  .qrow { display:flex; align-items:center; gap:8px; margin-top:8px; }
+  .qrow > .muted { flex:0 0 58px; }
+  .qrow select, .qrow input { flex:1; min-width:0; padding:6px 8px; border-radius:7px; font-size:12px;
+                 background:var(--card); color:var(--fg); border:1px solid var(--border); }
+  .qrow button.ghost { flex:none; padding:6px 10px; font-size:12px; }
+  .row { display:flex; gap:6px; margin-top:8px; }
+  button {
+    flex:1; padding:8px 6px; border:0; border-radius:8px; cursor:pointer;
+    font-weight:600; font-size:12.5px; color:var(--accent-fg); background:var(--accent);
+  }
+  button.ghost { background:var(--ghost); color:var(--fg); }
+  button.ghost:hover { filter:brightness(1.1); }
+  button.danger { background:var(--danger); color:#fff; }
+  button:disabled { opacity:.5; cursor:default; }
+  #status { margin-top:8px; font-size:12px; min-height:16px; color:var(--muted); }
+  #status:empty { display:none; }
+  .notice { margin:0 0 10px; padding:8px 10px; border-radius:8px;
+            font-size:12px; line-height:1.4; word-break:break-word; white-space:pre-line;
+            background:var(--card); border:1px solid var(--border); color:var(--fg); cursor:pointer; }
+  .notice.err { border-color:var(--danger); }
+  #helperOld { white-space:normal; }
+  #helperOld a { display:inline-block; margin-top:4px; color:var(--accent); font-weight:600; }
+  [hidden] { display:none !important; }
+  #rewindRow, #startRow { gap:6px; }
+  #rewindRow button, #startRow button { display:flex; align-items:center; justify-content:center; gap:5px;
+                      padding:7px 4px; font-size:12px; font-weight:600; }
+  #rewindRow svg, #startRow svg { width:14px; height:14px; flex:none; }
+  #rewindRow .lbl, #startRow .lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #backLive .dot, #startLive .dot { width:8px; height:8px; border-radius:50%; background:#e5484d; flex:none; }
+  .linkbtn { display:block; width:100%; margin-top:6px; padding:5px; background:none; border:0;
+             color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; font-weight:500; }
+  .linkbtn:hover { color:var(--fg); }
+  .center { text-align:center; }
+  .casting-box { text-align:center; padding:6px 4px 2px; }
+  .casting-box .to { font-size:11px; color:var(--muted); }
+  .casting-box .name { font-size:15px; font-weight:700; margin-top:2px; color:var(--name); }
+  .casting-box .what {
+    margin-top:4px; font-size:12px; color:var(--muted);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; word-break:break-word;
+  }
+  /* Custom TV Remote Panel */
+  .remote-card {
+    margin-top:10px; padding:10px; border-radius:10px;
+    background:var(--card); border:1px solid var(--border);
+  }
+  .scrub-times { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; margin-bottom:3px; }
+  .scrub-slider, .vol-slider {
+    width:100%; margin:0; accent-color:var(--accent); cursor:pointer;
+  }
+  .skip-row { display:flex; gap:4px; margin-top:8px; }
+  .skip-row button { padding:6px 2px; font-size:11.5px; font-weight:600; }
+  .skip-row button.intro { background:var(--accent); color:var(--accent-fg); }
+  .transport-row { display:flex; gap:6px; margin-top:8px; }
+  .transport-row button { padding:8px 6px; font-size:12px; }
+  .transport-row #tvPlayPause { flex:1.35; }
+  .jump-row { display:flex; gap:5px; margin-top:8px; align-items:center; }
+  .jump-row input {
+    width:78px; flex:none; padding:6px 7px; border-radius:7px; font-size:12px;
+    background:var(--bg); color:var(--fg); border:1px solid var(--border);
+    font-variant-numeric:tabular-nums;
+  }
+  .jump-row button { padding:6px 8px; font-size:12px; }
+  .jump-row #tvJumpBtn { flex:0 0 46px; }
+  .vol-row { display:flex; align-items:center; gap:8px; margin-top:9px; padding-top:8px; border-top:1px solid var(--border); }
+  .vol-row button { flex:none; width:34px; padding:5px 0; font-size:13px; }
+  .vol-row .vol-val { flex:0 0 26px; text-align:right; font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .toggle-row {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:8px; padding:6px 9px; border-radius:8px;
+    background:var(--card); border:1px solid var(--border);
+    font-size:12px; cursor:pointer; user-select:none;
+  }
+  .toggle-row input { width:15px; height:15px; accent-color:var(--accent); cursor:pointer; margin:0; }
+  .ep-status { margin-top:6px; font-size:11.5px; color:var(--accent); text-align:center; }
+  .qtrig { flex:1; min-width:0; display:flex; align-items:center; gap:6px; padding:6px 8px; border-radius:7px;
+           background:var(--card); color:var(--fg); border:1px solid var(--border); cursor:pointer; font-size:12px; }
+  .qtrig:hover { border-color:var(--hover-border); }
+  .qtrig .qtl { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; }
+  .qtrig .qtc { color:var(--muted); flex:none; }
+  .qmenu { margin-top:6px; border:1px solid var(--border); border-radius:9px; background:var(--card); padding:4px;
+           max-height:200px; overflow:auto; }
+  .qm-item { display:flex; align-items:center; gap:8px; padding:8px; border-radius:6px; font-size:12px;
+             color:var(--fg); cursor:pointer; }
+  .qm-item:hover { background:var(--ghost); }
+  .qm-item.sel { color:var(--accent); }
+  .qm-l { flex:1; }
+  .qm-badge { font-size:11px; color:var(--muted); }
+  .qm-hint { color:var(--muted); font-size:11px; }
+  .qm-chev { color:var(--muted); }
+  .qm-back { display:flex; align-items:center; gap:6px; padding:6px 8px; color:var(--muted); font-size:11px;
+             cursor:pointer; border-bottom:1px solid var(--border); margin-bottom:3px; }
+  .qm-sep { height:1px; background:var(--border); margin:4px 6px; }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <h1 id="title"><span class="dot"></span> Streaming LAN Cast</h1>
+    <button id="themeBtn" class="themebtn" title="" aria-label="theme"></button>
+  </div>
+
+  <div id="booting" class="center" style="padding:38px 4px"><span class="spin on"></span></div>
+  <div id="notice" class="notice" hidden></div>
+
+  <div id="helperOld" class="notice" hidden>
+    <div data-i18n="helperOutdated">A new helper version is available.</div>
+    <a id="updateHelperLink" href="#" data-i18n="updateHelper">Update it</a>
+  </div>
+
+  <div id="noHelper" hidden>
+    <div class="center" style="padding:14px 4px">
+      <div><span data-i18n="helperTitle">Helper not detected.</span></div>
+      <div class="muted" style="margin-top:6px" data-i18n="helperHint">Install the local helper, or start it and retry.</div>
+      <div class="row">
+        <button id="getHelper" data-i18n="getHelper">Get the helper</button>
+        <button id="retryHelper" class="ghost" data-i18n="retry">Retry</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="needToken" hidden>
+    <div class="center" style="padding:14px 4px">
+      <div><span data-i18n="needTokenTitle">Token not set up.</span></div>
+      <div class="muted" style="margin-top:6px" data-i18n="needTokenHint">Paste the helper's token in the options.</div>
+      <div class="row"><button id="openOptions" class="ghost" data-i18n="openOptions">Open options</button></div>
+    </div>
+  </div>
+
+  <!-- view: pick a device -->
+  <div id="pickerView" hidden>
+    <div class="pickhead">
+      <span class="muted" data-i18n="pickerPrompt">Choose where to cast the current tab</span>
+      <span id="spin" class="spin"></span>
+    </div>
+    <div id="devices"></div>
+    <div class="qrow">
+      <span class="muted" data-i18n="qualityLabel">Quality</span>
+      <button type="button" id="quality" class="qtrig" data-q="best"><span class="qtl" data-i18n="qualityBest">Best available</span><span class="qtc">▾</span></button>
+      <span id="qSpin" class="spin"></span>
+    </div>
+    <div id="qualityMenu" class="qmenu" hidden></div>
+    <div class="qrow">
+      <span class="muted">Start at</span>
+      <input id="customStartTime" type="text" spellcheck="false" autocomplete="off" placeholder="Auto (tab time) or 12:45">
+    </div>
+    <button id="manualToggle" class="linkbtn" data-i18n="manualToggle">Cast a stream address</button>
+    <div id="manualRow" class="qrow" hidden>
+      <input id="manualUrl" type="url" spellcheck="false" autocomplete="off" placeholder="https://…/stream.m3u8">
+      <button type="button" id="manualPaste" class="ghost" data-i18n="paste">Paste</button>
+    </div>
+    <div id="castRow" class="row"><button id="castBtn" data-i18n="castButton">Cast this tab</button></div>
+    <div id="startRow" class="row" hidden>
+      <button id="startAtZero">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 19 8 12l10-7z" fill="currentColor"/><path d="M6 5v14"/></svg>
+        <span class="lbl" data-i18n="castFromStart">From start</span>
+      </button>
+      <button id="startAtHere">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a9 9 0 1 1 2 6"/><path d="M3 4v6h6"/></svg>
+        <span class="lbl" data-i18n="rewindHere">Position</span>
+      </button>
+      <button id="startLive" hidden>
+        <span class="dot"></span>
+        <span class="lbl" data-i18n="backLive">Live</span>
+      </button>
+    </div>
+    <div id="status"></div>
+    <button id="enableDetect" class="linkbtn" data-i18n="enableDetect" hidden>Enable source detection</button>
+  </div>
+
+  <!-- view: casting + Full TV Remote -->
+  <div id="castingView" hidden>
+    <div class="casting-box">
+      <div class="to">📺 <span data-i18n="castingTo">Casting to</span></div>
+      <div class="name" id="castingName"></div>
+      <div class="what" id="castingTitle"></div>
+    </div>
+
+    <div id="tvRemoteCard" class="remote-card">
+      <div class="scrub-times">
+        <span id="tvPosLbl">00:00</span>
+        <span id="tvStateLbl">Playing</span>
+        <span id="tvDurLbl">--:--</span>
+      </div>
+      <input id="tvScrub" class="scrub-slider" type="range" min="0" max="100" value="0" step="1">
+
+      <div class="transport-row">
+        <button type="button" id="epPrevBtn" class="ghost" title="Previous Episode">⏮ Prev Ep</button>
+        <button type="button" id="tvPlayPause">⏸ Pause</button>
+        <button type="button" id="epNextBtn" class="ghost" title="Next Episode">Next Ep ⏭</button>
+      </div>
+
+      <div class="skip-row">
+        <button type="button" class="ghost" data-skip="-30">-30s</button>
+        <button type="button" class="ghost" data-skip="-10">-10s</button>
+        <button type="button" class="ghost" data-skip="10">+10s</button>
+        <button type="button" class="ghost" data-skip="30">+30s</button>
+        <button type="button" class="intro" data-skip="90" title="Skip Intro (+1m30s)">+1:30</button>
+      </div>
+
+      <div class="jump-row">
+        <input id="tvJumpInput" type="text" spellcheck="false" autocomplete="off" placeholder="12:45">
+        <button type="button" id="tvJumpBtn" class="ghost">Go</button>
+        <button type="button" id="tvTabSyncBtn" class="ghost" title="Jump TV to laptop player time">↻ Tab</button>
+      </div>
+
+      <div class="vol-row">
+        <button type="button" id="tvMuteBtn" class="ghost" title="Mute / Unmute">🔊</button>
+        <input id="tvVolSlider" class="vol-slider" type="range" min="0" max="100" value="20" step="1">
+        <span id="tvVolVal" class="vol-val">--</span>
+      </div>
+      <div id="epStatus" class="ep-status" hidden></div>
+    </div>
+
+    <label class="toggle-row">
+      <span>Auto-play next episode</span>
+      <input id="autoNextToggle" type="checkbox">
+    </label>
+
+    <div class="qrow">
+      <span class="muted" data-i18n="qualityLabel">Quality</span>
+      <button type="button" id="castQuality" class="qtrig" data-q="best"><span class="qtl" data-i18n="qualityBest">Best available</span><span class="qtc">▾</span></button>
+      <span id="castQSpin" class="spin"></span>
+    </div>
+    <div id="castQualityMenu" class="qmenu" hidden></div>
+
+    <div class="row"><button id="stopBtn" class="danger" data-i18n="stopButton">Stop</button></div>
+
+    <!-- Kept hidden for compatibility with built-in popup.js refs -->
+    <div id="rewindRow" class="row" hidden style="display:none">
+      <button id="rewindStart" class="ghost"><span class="lbl">Start</span></button>
+      <button id="rewindHere" class="ghost"><span class="lbl">Position</span></button>
+      <button id="backLive" class="ghost"><span class="lbl">Live</span></button>
+    </div>
+  </div>
+</body>
+<script src="browser-polyfill.js"></script>
+<script src="constants.js"></script>
+<script src="popup.js"></script>
+</html>

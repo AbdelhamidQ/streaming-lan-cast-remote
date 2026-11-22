@@ -1,0 +1,143 @@
+{
+   "backLive": {
+      "message": "Vivo"
+   },
+   "castButton": {
+      "message": "Castear esta pestaña"
+   },
+   "castFromStart": {
+      "message": "Desde el inicio"
+   },
+   "castUrlButton": {
+      "message": "Castear esta URL"
+   },
+   "castingTo": {
+      "message": "Casteando a"
+   },
+   "detectEnabledReload": {
+      "message": "Detección activada. Recargá la página (o reproducí el video) y casteá."
+   },
+   "enableDetect": {
+      "message": "Activar detección de fuentes"
+   },
+   "enableDetectHint": {
+      "message": "Activá la detección de fuentes y recargá la página."
+   },
+   "errBlobSource": {
+      "message": "El video de esta página no tiene una dirección que se pueda castear."
+   },
+   "errCantCast": {
+      "message": "No se puede castear esta pestaña."
+   },
+   "errDrm": {
+      "message": "Este stream está protegido con DRM, así que no se puede castear."
+   },
+   "errNoHelper": {
+      "message": "No se pudo contactar el ayudante."
+   },
+   "errStreamExpired": {
+      "message": "El stream venció. Recargá la página y casteá de nuevo."
+   },
+   "errStreamUnavailable": {
+      "message": "No se pudo abrir el stream: puede estar offline, bloqueado por región, o no soportado."
+   },
+   "extDescription": {
+      "message": "Castea el stream de la pestaña actual a un dispositivo DLNA o Google Cast de tu red local."
+   },
+   "getHelper": {
+      "message": "Descargar el helper"
+   },
+   "helperHint": {
+      "message": "Instalá el helper local, o iniciálo y reintentá."
+   },
+   "helperOutdated": {
+      "message": "Hay una nueva versión del ayudante."
+   },
+   "helperTitle": {
+      "message": "Ayudante no detectado."
+   },
+   "manualTitle": {
+      "message": "Transmisión"
+   },
+   "manualToggle": {
+      "message": "Castear una dirección de stream"
+   },
+   "needTokenHint": {
+      "message": "Pegá el token del ayudante en las opciones."
+   },
+   "needTokenTitle": {
+      "message": "Falta configurar el token."
+   },
+   "noSourceFound": {
+      "message": "No detecté una fuente de video. Reproducí el video y reintentá."
+   },
+   "openOptions": {
+      "message": "Abrir opciones"
+   },
+   "optionsHelp": {
+      "message": "Pegá el token del ayudante. Lo encontrás en el archivo ~/.streaming-lan-cast/token de tu carpeta de usuario (el ayudante también lo muestra al iniciar)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast: Ajustes"
+   },
+   "optionsTokenLabel": {
+      "message": "Token del ayudante"
+   },
+   "paste": {
+      "message": "Pegar"
+   },
+   "pickerPrompt": {
+      "message": "Elegí dónde castear la pestaña actual"
+   },
+   "qualityBest": {
+      "message": "Mejor disponible"
+   },
+   "qualityLabel": {
+      "message": "Calidad"
+   },
+   "retry": {
+      "message": "Reintentar"
+   },
+   "rewindHere": {
+      "message": "Posición"
+   },
+   "rewindStart": {
+      "message": "Inicio"
+   },
+   "save": {
+      "message": "Guardar"
+   },
+   "saved": {
+      "message": "Guardado ✓"
+   },
+   "savedNoConn": {
+      "message": "Guardado (no se pudo contactar al ayudante)"
+   },
+   "savedRejected": {
+      "message": "Token rechazado, no se guardó"
+   },
+   "searching": {
+      "message": "Buscando dispositivos..."
+   },
+   "sourceDetected": {
+      "message": "Fuente detectada"
+   },
+   "sourceNone": {
+      "message": "Sin fuente de video detectada todavía"
+   },
+   "stopButton": {
+      "message": "Parar"
+   },
+   "themeAuto": {
+      "message": "Tema: automático"
+   },
+   "themeDark": {
+      "message": "Tema: oscuro"
+   },
+   "themeLight": {
+      "message": "Tema: claro"
+   },
+   "updateHelper": {
+      "message": "Actualizar"
+   }
+}

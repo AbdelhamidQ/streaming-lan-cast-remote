@@ -1,0 +1,652 @@
+// Streaming LAN Cast: media sniffer.
+// Watches the network for HLS/DASH/direct-video sources so the popup can cast streams from
+// sites streamlink can't resolve from the page URL. Captures the request headers the browser
+// used (Referer/Origin/User-Agent/Cookie) so the helper can replay them.
+// Gated behind the OPTIONAL webRequest + <all_urls> permission (enabled from the popup).
+
+// In Chrome the background is a service worker (no <script> tags), so the polyfill is loaded here
+// for browser.* and promise-returning onMessage. In Firefox it is an event page and the polyfill is
+// already loaded via the manifest's background.scripts, so importScripts is absent and this is skipped.
+if (typeof importScripts === "function") importScripts("browser-polyfill.js");
+
+// Headers the sniffer captures to replay. Keep in sync with the helper's _REPLAY_HEADERS
+// (helper/streaming-lan-cast-helper.py). That set is the security boundary; this must be a subset.
+const WANT = ["referer", "origin", "user-agent", "cookie"];
+
+const perTab = new Map();    // tabId -> Map(url -> {url, type, headers, ts})
+const hdrStash = new Map();  // requestId -> {Referer, Origin, User-Agent, Cookie}
+const dirTab = new Map();    // stream directory -> owning tabId, learned from tab-attributed requests
+const orphanSrc = [];        // sources seen with no tabId (Worker context), held until their tab is known
+let installed = false;
+let activeTabId = -1;        // the focused tab; quality precompute is limited to it (avoid scanning background tabs)
+
+// The popup computes the quality list on open (read the page's inlined ladder + ask the helper). To make
+// it appear instantly (like the already-warm device list) precompute it here in the background as the
+// user watches, and hand the popup the cached answer. Keyed by tab; dropped on navigation / tab close.
+const qualCache = new Map(); // tabId -> {qualities, matrix, ts}
+// Which of a tab's sniffed playlists is the recording of the broadcast it plays, resolved here while
+// the page runs so a cast can offer to jump back through it without a wait at cast time.
+const recCache = new Map();  // tabId -> {rec, ts}
+const recLast = new Map();   // tabId -> last resolve time (a running stream keeps minting playlists)
+const qualTimer = new Map(); // tabId -> debounce timer id
+const qualLast = new Map();  // tabId -> last precompute time (rate-limit a busy live stream)
+// Loopback control server + auth header (mirrors constants.js, which the popup loads; keep in sync).
+const HELPER_CTRL = "http://127.0.0.1:9988";
+const HELPER_TOKEN_HEADER = "X-LanCast-Token";
+
+// The MV3 background is a non-persistent event page: it's suspended when idle, dropping perTab.
+// Mirror detected sources into storage.session so the popup can still read them after a suspend
+// (and a cast doesn't silently replay without the captured Cookie). storage.session is in-memory,
+// extension-scoped, survives event-page suspension, and is cleared on browser restart.
+async function persistTab(tabId) {
+  try {
+    const cur = (await browser.storage.session.get("sniffed")).sniffed || {};
+    const m = perTab.get(tabId);
+    if (m && m.size) cur[tabId] = [...m.values()];
+    else delete cur[tabId];
+    await browser.storage.session.set({ sniffed: cur });
+  } catch {}
+}
+async function rehydrate() {
+  try {
+    const sniffed = (await browser.storage.session.get("sniffed")).sniffed || {};
+    for (const [tabId, arr] of Object.entries(sniffed)) {
+      const m = new Map();
+      for (const s of arr) m.set(s.url.split("?")[0], s);   // same query-less key as record()
+      perTab.set(Number(tabId), m);
+    }
+  } catch {}
+}
+
+function pickHeaders(list) {
+  const h = {};
+  for (const x of (list || [])) {
+    if (WANT.includes(x.name.toLowerCase())) h[x.name] = x.value;
+  }
+  return h;
+}
+function ctOf(headers) {
+  for (const h of (headers || [])) if (h.name.toLowerCase() === "content-type") return h.value || "";
+  return "";
+}
+// classify ONLY manifests + standalone files; segments (.ts/.m4s, video/mp2t) are deliberately ignored.
+function classify(url, ct) {
+  const u = (url || "").toLowerCase();
+  ct = (ct || "").toLowerCase();
+  if (/\.m3u8(\?|#|$)/.test(u) || ct.includes("mpegurl")) return "hls";
+  if (/\.mpd(\?|#|$)/.test(u) || ct.includes("dash+xml")) return "dash";
+  // A direct media file: a container extension (mp4/m4v/mov/webm), even when the host serves it as
+  // application/octet-stream or sends no type (common on direct-download hosts). Only a text/* type
+  // rules it out (an HTML page at a .mp4 URL). Segments (.ts/.m4s, video/mp2t) have no container
+  // extension, so they stay ignored.
+  if (/\.(mp4|m4v|mov|webm)(\?|#|$)/.test(u) && !ct.startsWith("text/")) return "file";
+  return null;
+}
+// Segment-level playlists whose filenames carry a rolling stream/segment id (live low-latency chunklists).
+// A running stream keeps minting new ones, so their path-keys accumulate; without protecting the master
+// they would push the one-shot multi-quality master out of the bounded buffer before the popup reads it.
+// Both patterns match the FILENAME only (not the whole path), so a master under a numbered/track-named
+// directory isn't mistaken for a chunklist; a conventional master filename is never an eviction victim.
+const MASTER_NAME_RE = /(^|[_-])(master|index|playlist|manifest)\.m3u8$/i;
+const SEGMENT_PLAYLIST_RE = /^chunklist|(^|[_-])(seg|segment|frag|part)[_-]?\d|[_-]\d+[_-](video|audio)[_-]/i;
+function baseName(k) { return k.split("/").pop() || k; }
+function record(tabId, src) {
+  if (tabId < 0) return;
+  let m = perTab.get(tabId);
+  if (!m) { m = new Map(); perTab.set(tabId, m); }
+  // Key by URL without its query string: a low-latency playlist is re-fetched constantly with a changing
+  // ?_HLS_msn=... , and keying by the full URL would let those refills evict the one-shot master playlist
+  // (which the helper needs to read the stream's qualities and audio).
+  const key = src.url.split("?")[0];
+  const fresh = !m.has(key);                             // a genuinely new playlist, not a chunklist refresh
+  m.set(key, src);
+  while (m.size > 40) {                                  // bound memory
+    let victim = null;
+    for (const k of m.keys()) {                          // 1st choice: oldest rolling chunklist that isn't a master
+      const b = baseName(k);
+      if (!MASTER_NAME_RE.test(b) && SEGMENT_PLAYLIST_RE.test(b)) { victim = k; break; }
+    }
+    if (victim == null) for (const k of m.keys()) {      // else oldest non-master, so a master survives
+      if (!MASTER_NAME_RE.test(baseName(k))) { victim = k; break; }
+    }
+    m.delete(victim != null ? victim : m.keys().next().value);   // all masters -> drop oldest
+  }
+  persistTab(tabId);                                     // survive event-page suspension
+  // A newly-seen HLS playlist on the focused tab -> warm the quality list so the popup opens instantly.
+  // A running live stream re-fetches its chunklists under the same query-less key (not "fresh"), so it
+  // doesn't re-trigger this; only a genuinely new playlist (the master, a new rendition) does.
+  if (fresh && (src.type === "hls" || src.type === "dash") && tabId === activeTabId) {
+    scheduleQualPrecompute(tabId);
+    resolveRecording(tabId);
+  }
+}
+
+function pickHeaderCI(headers, name) {   // sniffed headers keep original casing; match case-insensitively
+  if (!headers) return "";
+  const ln = name.toLowerCase();
+  for (const k in headers) if (k.toLowerCase() === ln) return headers[k];
+  return "";
+}
+
+// Read the page's inlined {quality,url} rendition list from its MAIN world (the isolated world can't see
+// inline <script> globals). Mirrors popup.js readPageLadder. Keep the injected scan in sync with it.
+async function readPageLadderBg(tabId) {
+  if (!(browser.scripting && browser.scripting.executeScript)) return { ladder: {} };
+  try {
+    const res = await browser.scripting.executeScript({
+      target: { tabId },
+      world: "MAIN",
+      func: async () => {
+        const out = {};
+        const push = (q, u) => {
+          const h = parseInt(q, 10);
+          if (h >= 100 && h <= 4320 && /\.m3u8/.test(u) && out[h] === undefined) out[h] = String(u);
+        };
+        try {
+          const html = document.documentElement.outerHTML;
+          const urlRe = /"(?:videoUrl|url|src|file|manifest)"\s*:\s*"([^"]*\.m3u8[^"]*)"/g;
+          let m;
+          while ((m = urlRe.exec(html))) {
+            let a = m.index; const lo = Math.max(0, m.index - 2000);
+            while (a > lo && html[a] !== "{") a--;
+            let b = m.index; const hi = Math.min(html.length, m.index + 2000);
+            while (b < hi && html[b] !== "}") b++;
+            const o = html.slice(a, b + 1);
+            const q = o.match(/"(?:quality|label|res|height)"\s*:\s*"?(\d{3,4})p?"?/);
+            if (q) { try { push(q[1], JSON.parse('"' + m[1] + '"')); } catch { push(q[1], m[1].replace(/\\\//g, "/")); } }
+          }
+          // remote list endpoint (.../media/hls/?s=...) -> fetch it in-page (same-origin, the browser sends
+          // the cookie itself, so the helper never handles it). Only when nothing was inlined.
+          if (!Object.keys(out).length) {
+            const rm = html.match(/"videoUrl"\s*:\s*"([^"]*?\\?\/media\\?\/hls\\?\/[^"]*?)"/);
+            if (rm) {
+              let ru; try { ru = JSON.parse('"' + rm[1] + '"'); } catch { ru = rm[1].replace(/\\\//g, "/"); }
+              try {
+                const resp = await fetch(ru, { credentials: "include" });
+                const arr = await resp.json();
+                for (const it of (Array.isArray(arr) ? arr : [])) {
+                  const h = parseInt(it && it.quality, 10);
+                  if (h >= 100 && h <= 4320 && it && typeof it.videoUrl === "string" && out[h] === undefined) out[h] = it.videoUrl;
+                }
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
+        return { out };
+      },
+    });
+    const r = (res && res[0] && res[0].result) || {};
+    return { ladder: r.out || {} };
+  } catch (e) { return { ladder: {} }; }
+}
+
+function scheduleQualPrecompute(tabId) {
+  clearTimeout(qualTimer.get(tabId));
+  qualTimer.set(tabId, setTimeout(() => precomputeQualities(tabId), 800));   // coalesce the startup burst
+}
+
+// Compute the quality list the popup would, and cache it. Same inputs as popup.loadQualities: the sniffed
+// manifest sources' replay headers + the page's inlined ladder, POSTed to the helper (which short-circuits
+// on the ladder when present). The Cookie never rides in a URL; it goes in the POST body via the page headers.
+async function precomputeQualities(tabId) {
+  const last = qualLast.get(tabId) || 0;
+  if (Date.now() - last < 5000) { scheduleQualPrecompute(tabId); return; }   // rate-limit; retry later
+  qualLast.set(tabId, Date.now());
+  try {
+    const m = perTab.get(tabId);
+    const srcs = m ? [...m.values()].filter(s => s.type === "hls" || s.type === "dash") : [];
+    if (!srcs.length) return;
+    const hs = {};   // Referer/Origin/UA the host needs to serve the master (never the Cookie, in a URL)
+    for (const k of ["Referer", "Origin", "User-Agent"]) { const v = pickHeaderCI(srcs[0].headers, k); if (v) hs[k] = v; }
+    const lr = await readPageLadderBg(tabId);
+    const body = "url=" + encodeURIComponent(srcs[0].url)
+      + "&urls=" + encodeURIComponent(JSON.stringify(srcs.map(s => s.url)))
+      + "&h=" + encodeURIComponent(JSON.stringify(hs))
+      + "&ladder=" + encodeURIComponent(JSON.stringify(lr.ladder || {}));
+    let token = "";
+    try { token = (await browser.storage.local.get("token")).token || ""; } catch {}
+    const headers = { "Content-Type": "application/x-www-form-urlencoded" };
+    if (token) headers[HELPER_TOKEN_HEADER] = token;
+    const r = await fetch(HELPER_CTRL + "/qualities", { method: "POST", cache: "no-store", headers, body });
+    const j = await r.json().catch(() => null);
+    if (j && j.ok) qualCache.set(tabId, { qualities: j.qualities || [], matrix: j.matrix || [], ts: Date.now() });
+  } catch {}
+}
+
+// Ask the helper which sniffed playlist is the recording. Cheap to repeat: the helper caches its
+// answer per candidate set, and a page that exposes no recording answers with nothing.
+async function resolveRecording(tabId) {
+  const last = recLast.get(tabId) || 0;
+  if (Date.now() - last < 8000) return;
+  recLast.set(tabId, Date.now());
+  try {
+    const m = perTab.get(tabId);
+    const srcs = m ? [...m.values()].filter(s => s.type === "hls") : [];
+    if (!srcs.length) return;
+    const hs = {};
+    for (const k of ["Referer", "Origin", "User-Agent"]) { const v = pickHeaderCI(srcs[0].headers, k); if (v) hs[k] = v; }
+    const body = "urls=" + encodeURIComponent(JSON.stringify(srcs.map(s => s.url).slice(0, 6)))
+      + "&h=" + encodeURIComponent(JSON.stringify(hs));
+    let token = "";
+    try { token = (await browser.storage.local.get("token")).token || ""; } catch {}
+    const headers = { "Content-Type": "application/x-www-form-urlencoded" };
+    if (token) headers[HELPER_TOKEN_HEADER] = token;
+    const r = await fetch(HELPER_CTRL + "/recording", { method: "POST", cache: "no-store", headers, body });
+    const j = await r.json().catch(() => null);
+    if (j && j.ok && j.rec) recCache.set(tabId, { rec: j.rec, ts: Date.now() });
+  } catch {}
+}
+
+function clearTabDirs(tabId) {   // drop this tab's stream-directory ownerships so they can't outlive its stream
+  for (const [dir, t] of dirTab) if (t === tabId) dirTab.delete(dir);
+}
+function onBeforeRequest(d) {
+  if (d.type === "main_frame") {                         // navigation -> reset this tab
+    perTab.delete(d.tabId); clearTabDirs(d.tabId); qualCache.delete(d.tabId); recCache.delete(d.tabId); recLast.delete(d.tabId);
+    clearTimeout(qualTimer.get(d.tabId)); qualTimer.delete(d.tabId);
+    persistTab(d.tabId);
+  }
+}
+function onBeforeSendHeaders(d) {
+  const h = pickHeaders(d.requestHeaders);
+  if (Object.keys(h).length) {
+    hdrStash.set(d.requestId, h);
+    while (hdrStash.size > 64) hdrStash.delete(hdrStash.keys().next().value);   // bound: drop stale cookie-bearing entries
+  }
+}
+// The stream directory (host + path without the filename) is shared by a master and its own chunklists
+// but is unique per stream, so it attributes a no-tab source to the exact tab playing that stream.
+function dirOf(u) { try { const x = new URL(u); return x.host + x.pathname.replace(/\/[^/]*$/, ""); } catch { return ""; } }
+// A player can fetch its one-shot MASTER playlist from a Web Worker, which webRequest reports with no
+// tabId (-1); the continuous chunklists come from the page with a real tabId. Attribute a no-tab source
+// to the tab that owns the same stream directory, holding it until a tab-attributed request reveals that
+// tab (the master usually arrives first). Matching on the directory (not the host) keeps concurrent
+// streams on a shared CDN host from cross-wiring, which would cast a different stream than the one chosen.
+function attachOrphans(dir, tabId) {
+  for (let i = orphanSrc.length - 1; i >= 0; i--) {
+    if (orphanSrc[i].dir === dir) { record(tabId, orphanSrc[i].src); orphanSrc.splice(i, 1); }
+  }
+}
+function onHeadersReceived(d) {
+  const ct = ctOf(d.responseHeaders);
+  const type = classify(d.url, ct);
+  if (!type) {
+    // A media segment (.ts/.m4s / video/mp2t) shares its playlist's stream directory but, unlike a
+    // worker-fetched one-shot playlist, carries the real tabId. Use it to reveal the tab for an orphan
+    // playlist parked from a tabId-less (Web Worker) request, without recording the segment itself.
+    if (d.tabId >= 0 && (/\.(ts|m4s)(\?|#|$)/i.test(d.url) || ct.toLowerCase().includes("mp2t"))) {
+      const sdir = dirOf(d.url);
+      if (sdir && !dirTab.has(sdir)) { dirTab.set(sdir, d.tabId); attachOrphans(sdir, d.tabId); }
+    }
+    return;
+  }
+  const src = { url: d.url, type, headers: hdrStash.get(d.requestId) || {}, ts: Date.now() };
+  const dir = dirOf(d.url);
+  if (d.tabId >= 0) {
+    if (dir) {
+      dirTab.set(dir, d.tabId); attachOrphans(dir, d.tabId);
+      while (dirTab.size > 128) dirTab.delete(dirTab.keys().next().value);   // bound (also cleared on nav/close)
+    }
+    record(d.tabId, src);
+  } else if (dir && dirTab.has(dir)) {
+    record(dirTab.get(dir), src);
+  } else if (dir) {
+    orphanSrc.push({ dir, src });
+    while (orphanSrc.length > 32) orphanSrc.shift();
+  }
+}
+function cleanup(d) { hdrStash.delete(d.requestId); }
+
+function installListeners() {
+  if (installed || !browser.webRequest) return;
+  const f = { urls: ["<all_urls>"] };
+  // Chrome hides Cookie/Referer/Origin/User-Agent from webRequest unless "extraHeaders" is requested;
+  // Firefox exposes them with "requestHeaders" alone and has no such option. Add it only where it
+  // exists so the same code captures the replay headers in both browsers.
+  const reqSpec = ["requestHeaders"];
+  const obsh = browser.webRequest.OnBeforeSendHeadersOptions;
+  if (obsh && obsh.EXTRA_HEADERS) reqSpec.push("extraHeaders");
+  browser.webRequest.onBeforeRequest.addListener(onBeforeRequest, f);
+  browser.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, f, reqSpec);
+  browser.webRequest.onHeadersReceived.addListener(onHeadersReceived, f, ["responseHeaders"]);
+  browser.webRequest.onCompleted.addListener(cleanup, f);
+  browser.webRequest.onErrorOccurred.addListener(cleanup, f);
+  installed = true;
+}
+function removeListeners() {
+  if (!installed) return;
+  try {
+    browser.webRequest.onBeforeRequest.removeListener(onBeforeRequest);
+    browser.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
+    browser.webRequest.onHeadersReceived.removeListener(onHeadersReceived);
+    browser.webRequest.onCompleted.removeListener(cleanup);
+    browser.webRequest.onErrorOccurred.removeListener(cleanup);
+  } catch {}   // browser.webRequest may already be gone once the permission is revoked
+  installed = false;
+}
+
+// Register webRequest listeners SYNCHRONOUSLY at top-level eval (browser.webRequest exists iff the
+// optional "webRequest" permission is granted). A non-persistent MV3 event page is only woken for
+// events whose listeners were added during top-level evaluation. Adding them later from a Promise
+// means a navigation after a suspend wouldn't wake the sniffer and sources would be silently missed.
+rehydrate();
+if (browser.webRequest) installListeners();
+browser.permissions.onAdded.addListener(() => { if (browser.webRequest) installListeners(); });
+browser.permissions.onRemoved.addListener(() => { if (!browser.webRequest) removeListeners(); });
+browser.tabs.onRemoved.addListener((tabId) => {
+  perTab.delete(tabId); clearTabDirs(tabId);
+  qualCache.delete(tabId); clearTimeout(qualTimer.get(tabId)); qualTimer.delete(tabId); qualLast.delete(tabId);
+  recCache.delete(tabId); recLast.delete(tabId);
+  persistTab(tabId);
+});
+// Track the focused tab so quality precompute only ever scans the page the user is actually on.
+browser.tabs.onActivated.addListener((info) => { activeTabId = info.tabId; });
+if (browser.windows && browser.windows.onFocusChanged) {
+  browser.windows.onFocusChanged.addListener((wid) => {
+    if (wid < 0) return;   // all windows blurred
+    browser.tabs.query({ active: true, windowId: wid }).then((t) => { if (t[0]) activeTabId = t[0].id; }).catch(() => {});
+  });
+}
+browser.tabs.query({ active: true, currentWindow: true }).then((t) => { if (t[0]) activeTabId = t[0].id; }).catch(() => {});
+
+browser.runtime.onMessage.addListener((msg, sender) => {
+  if (!msg) return;
+  // fail CLOSED: serve ONLY our own privileged extension pages (popup/options). Reject a missing
+  // sender, a foreign extension id, and any content-script / tab sender. This protects the
+  // captured Cookie/header data from being read by a web page or another extension.
+  if (!sender || sender.id !== browser.runtime.id || sender.tab) return;
+  if (msg.cmd === "getDetected") {
+    return (async () => {
+      const m = perTab.get(msg.tabId);
+      let arr = m ? [...m.values()] : [];
+      if (!arr.length) {
+        // the event page may have been suspended since the sniff -> read the persisted copy
+        try {
+          const sniffed = (await browser.storage.session.get("sniffed")).sniffed || {};
+          arr = sniffed[msg.tabId] || [];
+        } catch {}
+      }
+      const rank = (t) => (t === "hls" ? 0 : t === "dash" ? 1 : 2);
+      arr = [...arr].sort((a, b) => rank(a.type) - rank(b.type) || b.ts - a.ts);
+      return { sources: arr, qualities: qualCache.get(msg.tabId) || null,
+               rec: (recCache.get(msg.tabId) || {}).rec || "" };
+    })();
+  }
+  if (msg.cmd === "setCastCtx") {
+    return (async () => {
+      await browser.storage.session.set({ lastCast: msg.ctx || null });
+      ensureAutoNextWatcher();
+      return { ok: true };
+    })();
+  }
+  if (msg.cmd === "getRemoteState") {
+    return (async () => {
+      const st = await browser.storage.local.get("autoPlayNext");
+      return { switching: epSwitchBusy, switchMsg: epSwitchMsg, autoPlayNext: !!st.autoPlayNext };
+    })();
+  }
+  if (msg.cmd === "setAutoPlayNext") {
+    return (async () => {
+      await browser.storage.local.set({ autoPlayNext: !!msg.enabled });
+      ensureAutoNextWatcher();
+      return { ok: true, autoPlayNext: !!msg.enabled };
+    })();
+  }
+  if (msg.cmd === "switchEpisode") {
+    return switchEpisode(msg.delta > 0 ? 1 : -1, msg.tabId);
+  }
+});
+
+// ---- Episode Navigation & Auto-Play Next Episode ----
+let epSwitchBusy = false;
+let epSwitchMsg = "";
+let lastHandledEndedAt = 0;
+let autoNextTimer = null;
+
+async function helperCallBg(path, opts) {
+  let token = "";
+  try { token = (await browser.storage.local.get("token")).token || ""; } catch {}
+  const headers = token ? { [HELPER_TOKEN_HEADER]: token } : {};
+  const init = { cache: "no-store", headers };
+  if (opts && opts.method) init.method = opts.method;
+  if (opts && opts.body != null) {
+    init.body = opts.body;
+    headers["Content-Type"] = "application/x-www-form-urlencoded";
+  }
+  const r = await fetch(HELPER_CTRL + path, init);
+  return r.json();
+}
+
+function computeEpisodeUrl(rawUrl, delta) {
+  let u;
+  try { u = new URL(rawUrl); } catch { return ""; }
+  const pad = (n, orig) => String(n).padStart(orig.length, "0");
+
+  // 1) Query param: ?episode=16 or ?ep=16
+  for (const key of ["episode", "ep", "e"]) {
+    const val = u.searchParams.get(key);
+    if (val && /^\d+$/.test(val)) {
+      const next = parseInt(val, 10) + delta;
+      if (next < 1) return "";
+      u.searchParams.set(key, pad(next, val));
+      return u.toString();
+    }
+  }
+
+  const p = u.pathname;
+  // 2) s04e16 / S4E16 pattern
+  let m = p.match(/(.*\/?[^/]*?[sS]\d{1,2}[eE])(\d{1,3})(.*)/);
+  if (m) {
+    const next = parseInt(m[2], 10) + delta;
+    if (next < 1) return "";
+    u.pathname = m[1] + pad(next, m[2]) + m[3];
+    return u.toString();
+  }
+
+  // 3) /episode-16, /ep-16, /episode/16, /ep/16
+  m = p.match(/(.*(?:episode|ep)[-_\/])(\d{1,4})(\/?(?:[?#].*)?)$/i);
+  if (m) {
+    const next = parseInt(m[2], 10) + delta;
+    if (next < 1) return "";
+    u.pathname = m[1] + pad(next, m[2]) + m[3];
+    return u.toString();
+  }
+
+  // 4) /watch/tv/<id>/<season>/<ep> or /tv/<id>/<season>/<ep> or /<season>/<ep>
+  m = p.match(/(.*\/(?:tv|show|series|watch|anime)\/[^/]+\/\d+\/)(\d{1,4})(\/?)$/i);
+  if (m) {
+    const next = parseInt(m[2], 10) + delta;
+    if (next < 1) return "";
+    u.pathname = m[1] + pad(next, m[2]) + m[3];
+    return u.toString();
+  }
+
+  // 5) Generic trailing /<season>/<ep> with at least 2 path segments before it
+  m = p.match(/(.*\/\d{1,3}\/)(\d{1,4})(\/?)$/);
+  if (m) {
+    const next = parseInt(m[2], 10) + delta;
+    if (next < 1) return "";
+    u.pathname = m[1] + pad(next, m[2]) + m[3];
+    return u.toString();
+  }
+
+  return "";
+}
+
+async function clickEpisodeButtonInTab(tabId, delta) {
+  if (!(browser.scripting && browser.scripting.executeScript)) return false;
+  try {
+    const res = await browser.scripting.executeScript({
+      target: { tabId },
+      func: (isNext) => {
+        const re = isNext
+          ? /\b(next(\s*ep(isode)?)?|ep(isode)?\s*next)\b/i
+          : /\b(prev(ious)?(\s*ep(isode)?)?|ep(isode)?\s*prev(ious)?)\b/i;
+        const els = [...document.querySelectorAll("a, button, [role='button']")];
+        const scored = [];
+        for (const el of els) {
+          const rect = el.getBoundingClientRect();
+          if (rect.width < 12 || rect.height < 12) continue;
+          const txt = [
+            el.innerText || "", el.getAttribute("aria-label") || "",
+            el.getAttribute("title") || "", el.id || "", el.className || ""
+          ].join(" ").trim();
+          if (!re.test(txt)) continue;
+          if (/comment|page|slide|carousel|banner/i.test(txt)) continue;
+          let score = 0;
+          if (/episode|ep\b/i.test(txt)) score += 5;
+          if (el.tagName === "A" && el.href && !el.href.startsWith("javascript:")) score += 3;
+          scored.push({ el, score });
+        }
+        scored.sort((a, b) => b.score - a.score);
+        if (!scored.length) return false;
+        const target = scored[0].el;
+        if (target.tagName === "A" && target.href && /^https?:\/\//i.test(target.href)) {
+          return target.href;
+        }
+        target.click();
+        return "clicked";
+      },
+      args: [delta > 0],
+    });
+    return (res && res[0] && res[0].result) || false;
+  } catch {
+    return false;
+  }
+}
+
+async function waitForTabSources(tabId, prevUrlSet, timeoutMs = 18000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const m = perTab.get(tabId);
+    const arr = m ? [...m.values()] : [];
+    const rank = (t) => (t === "hls" ? 0 : t === "dash" ? 1 : 2);
+    const fresh = arr
+      .filter((s) => !prevUrlSet.has(s.url.split("?")[0]))
+      .sort((a, b) => rank(a.type) - rank(b.type) || b.ts - a.ts);
+    if (fresh.length) return fresh;
+    await new Promise((r) => setTimeout(r, 450));
+  }
+  const m = perTab.get(tabId);
+  return m ? [...m.values()] : [];
+}
+
+async function switchEpisode(delta, explicitTabId) {
+  if (epSwitchBusy) return { ok: false, error: "Already switching episode" };
+  epSwitchBusy = true;
+  epSwitchMsg = delta > 0 ? "Loading next episode..." : "Loading previous episode...";
+  try {
+    const sess = await browser.storage.session.get("lastCast");
+    let ctx = sess.lastCast || null;
+    let tabId = explicitTabId || (ctx && ctx.tabId) || activeTabId;
+    let tab = null;
+    if (tabId >= 0) {
+      try { tab = await browser.tabs.get(tabId); } catch {}
+    }
+    if (!tab) {
+      const qs = await browser.tabs.query({ active: true, currentWindow: true });
+      tab = qs[0] || null;
+      if (tab) tabId = tab.id;
+    }
+    if (!tab || !tab.url) return { ok: false, error: "No casting tab found" };
+
+    // Snapshot existing sniffed URLs so we only wait for the NEW episode's stream
+    const prevMap = perTab.get(tabId);
+    const prevSet = new Set(prevMap ? [...prevMap.keys()] : []);
+
+    const nextUrl = computeEpisodeUrl(tab.url, delta);
+    let navigated = false;
+    if (nextUrl && nextUrl !== tab.url) {
+      perTab.delete(tabId); clearTabDirs(tabId); persistTab(tabId);
+      await browser.tabs.update(tabId, { url: nextUrl });
+      navigated = true;
+    } else {
+      const clicked = await clickEpisodeButtonInTab(tabId, delta);
+      if (typeof clicked === "string" && /^https?:\/\//i.test(clicked)) {
+        perTab.delete(tabId); clearTabDirs(tabId); persistTab(tabId);
+        await browser.tabs.update(tabId, { url: clicked });
+        navigated = true;
+      } else if (clicked === "clicked") {
+        navigated = true;
+      }
+    }
+    if (!navigated) {
+      return { ok: false, error: delta > 0 ? "Could not find next episode" : "Could not find previous episode" };
+    }
+
+    epSwitchMsg = "Waiting for video stream...";
+    const sources = await waitForTabSources(tabId, prevSet, 20000);
+    if (!sources.length) {
+      return { ok: false, error: "New episode loaded, but no stream was detected yet" };
+    }
+
+    const updatedTab = await browser.tabs.get(tabId).catch(() => tab);
+    const curStatus = await helperCallBg("/status").catch(() => ({}));
+    const device = (ctx && ctx.device) || curStatus.device || "";
+    const devName = (ctx && ctx.name) || curStatus.name || "";
+    const devKind = (ctx && ctx.kind) || "dlna";
+    const quality = (ctx && ctx.quality) || curStatus.quality || "best";
+    if (!device) return { ok: false, error: "No target TV remembered" };
+
+    const hls = sources.filter((s) => s.type === "hls");
+    const src = hls[0] || sources[0];
+    const medias = hls.length ? JSON.stringify(hls.map((s) => s.url)) : "";
+    const headers = JSON.stringify(src.headers || {});
+    const title = (updatedTab.title || "").trim() || updatedTab.url;
+
+    epSwitchMsg = "Casting new episode...";
+    await helperCallBg("/stop").catch(() => {});
+    await new Promise((r) => setTimeout(r, 500));
+
+    const body =
+      `url=${encodeURIComponent(updatedTab.url)}&device=${encodeURIComponent(device)}` +
+      `&name=${encodeURIComponent(devName)}&title=${encodeURIComponent(title)}` +
+      `&quality=${encodeURIComponent(quality)}&kind=${encodeURIComponent(devKind)}` +
+      `&media=${encodeURIComponent(src.url)}&headers=${encodeURIComponent(headers)}` +
+      (medias ? `&medias=${encodeURIComponent(medias)}` : ``) +
+      `&noautoseek=1`;
+
+    const res = await helperCallBg("/cast", { method: "POST", body });
+    if (res && res.ok) {
+      await browser.storage.session.set({
+        lastCast: { tabId, url: updatedTab.url, device, name: devName, kind: devKind, quality }
+      });
+      return { ok: true, title, url: updatedTab.url };
+    }
+    return { ok: false, error: (res && res.error) || "Failed to cast next episode" };
+  } catch (e) {
+    return { ok: false, error: String(e && e.message || e) };
+  } finally {
+    epSwitchBusy = false;
+    epSwitchMsg = "";
+  }
+}
+
+async function checkAutoPlayNext() {
+  if (epSwitchBusy) return;
+  try {
+    const st = await browser.storage.local.get("autoPlayNext");
+    if (!st.autoPlayNext) return;
+    const info = await helperCallBg("/tv/info");
+    if (info && info.ok && info.ended && info.ended_at && info.ended_at > lastHandledEndedAt) {
+      lastHandledEndedAt = info.ended_at;
+      await helperCallBg("/tv/control?action=clear_ended").catch(() => {});
+      await switchEpisode(1);
+    }
+  } catch {}
+}
+
+function ensureAutoNextWatcher() {
+  if (autoNextTimer) clearInterval(autoNextTimer);
+  autoNextTimer = setInterval(checkAutoPlayNext, 4500);
+  if (browser.alarms && browser.alarms.create) {
+    try { browser.alarms.create("slc-autonext", { periodInMinutes: 0.5 }); } catch {}
+  }
+}
+
+if (browser.alarms && browser.alarms.onAlarm) {
+  browser.alarms.onAlarm.addListener((alarm) => {
+    if (alarm && alarm.name === "slc-autonext") checkAutoPlayNext();
+  });
+}
+ensureAutoNextWatcher();

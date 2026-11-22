@@ -1,0 +1,44 @@
+{
+  "action": {
+    "default_icon": {
+      "16": "icon-16.png",
+      "32": "icon-32.png"
+    },
+    "default_popup": "popup.html",
+    "default_title": "Streaming LAN Cast Remote"
+  },
+  "author": "Fabrizio Santi (Custom Remote)",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "default_locale": "en",
+  "description": "Cast browser videos to your TV with full DLNA remote controls and episode navigation.",
+  "host_permissions": [
+    "http://127.0.0.1:9988/*",
+    "<all_urls>"
+  ],
+  "icons": {
+    "128": "icon-128.png",
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
+    "96": "icon-96.png"
+  },
+  "manifest_version": 3,
+  "minimum_chrome_version": "102",
+  "name": "Streaming LAN Cast (TV Remote)",
+  "options_ui": {
+    "open_in_tab": false,
+    "page": "options.html"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "clipboardRead",
+    "scripting",
+    "webRequest",
+    "alarms"
+  ],
+  "version": "0.5.17"
+}

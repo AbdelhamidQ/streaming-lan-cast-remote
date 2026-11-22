@@ -1,0 +1,140 @@
+{
+   "backLive": {
+      "message": "Эфир"
+   },
+   "castButton": {
+      "message": "Транслировать эту вкладку"
+   },
+   "castFromStart": {
+      "message": "С начала"
+   },
+   "castUrlButton": {
+      "message": "Транслировать этот URL"
+   },
+   "castingTo": {
+      "message": "Трансляция на"
+   },
+   "detectEnabledReload": {
+      "message": "Обнаружение включено. Перезагрузите страницу (или запустите видео) и транслируйте."
+   },
+   "enableDetect": {
+      "message": "Включить обнаружение источников"
+   },
+   "enableDetectHint": {
+      "message": "Включите обнаружение источников и перезагрузите страницу."
+   },
+   "errBlobSource": {
+      "message": "У видео на этой странице нет адреса, который можно транслировать."
+   },
+   "errCantCast": {
+      "message": "Не удаётся транслировать эту вкладку."
+   },
+   "errDrm": {
+      "message": "Этот поток защищён технологией DRM, поэтому его нельзя транслировать."
+   },
+   "errNoHelper": {
+      "message": "Не удалось связаться с помощником."
+   },
+   "errStreamUnavailable": {
+      "message": "Не удалось открыть этот поток. Возможно, он недоступен, заблокирован по региону или не поддерживается."
+   },
+   "extDescription": {
+      "message": "Транслируйте поток текущей вкладки на устройства DLNA и Google Cast в вашей локальной сети."
+   },
+   "getHelper": {
+      "message": "Установить помощник"
+   },
+   "helperHint": {
+      "message": "Установите локальный помощник или запустите его и повторите попытку."
+   },
+   "helperOutdated": {
+      "message": "Доступна новая версия помощника."
+   },
+   "helperTitle": {
+      "message": "Помощник не обнаружен."
+   },
+   "manualTitle": {
+      "message": "Поток"
+   },
+   "manualToggle": {
+      "message": "Транслировать адрес потока"
+   },
+   "needTokenHint": {
+      "message": "Вставьте токен помощника в настройках."
+   },
+   "needTokenTitle": {
+      "message": "Токен не настроен."
+   },
+   "noSourceFound": {
+      "message": "Источник видео не обнаружен. Запустите видео и повторите попытку."
+   },
+   "openOptions": {
+      "message": "Открыть настройки"
+   },
+   "optionsHelp": {
+      "message": "Вставьте токен помощника. Он находится в файле ~/.streaming-lan-cast/token в вашей домашней папке (помощник также показывает его при запуске)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast. Настройки"
+   },
+   "optionsTokenLabel": {
+      "message": "Токен помощника"
+   },
+   "paste": {
+      "message": "Вставить"
+   },
+   "pickerPrompt": {
+      "message": "Выберите, куда транслировать текущую вкладку"
+   },
+   "qualityBest": {
+      "message": "Наилучшее доступное"
+   },
+   "qualityLabel": {
+      "message": "Качество"
+   },
+   "retry": {
+      "message": "Повторить"
+   },
+   "rewindHere": {
+      "message": "Позиция"
+   },
+   "rewindStart": {
+      "message": "Начало"
+   },
+   "save": {
+      "message": "Сохранить"
+   },
+   "saved": {
+      "message": "Сохранено ✓"
+   },
+   "savedNoConn": {
+      "message": "Сохранено (помощник недоступен)"
+   },
+   "savedRejected": {
+      "message": "Токен отклонён, не сохранён"
+   },
+   "searching": {
+      "message": "Поиск устройств..."
+   },
+   "sourceDetected": {
+      "message": "Источник обнаружен"
+   },
+   "sourceNone": {
+      "message": "Источник видео ещё не обнаружен"
+   },
+   "stopButton": {
+      "message": "Остановить"
+   },
+   "themeAuto": {
+      "message": "Тема: авто"
+   },
+   "themeDark": {
+      "message": "Тема: тёмная"
+   },
+   "themeLight": {
+      "message": "Тема: светлая"
+   },
+   "updateHelper": {
+      "message": "Обновить"
+   }
+}

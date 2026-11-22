@@ -1,0 +1,143 @@
+{
+   "backLive": {
+      "message": "Live"
+   },
+   "castButton": {
+      "message": "Cast this tab"
+   },
+   "castFromStart": {
+      "message": "From start"
+   },
+   "castUrlButton": {
+      "message": "Cast this URL"
+   },
+   "castingTo": {
+      "message": "Casting to"
+   },
+   "detectEnabledReload": {
+      "message": "Detection enabled. Reload the page (or start the video), then cast."
+   },
+   "enableDetect": {
+      "message": "Enable source detection"
+   },
+   "enableDetectHint": {
+      "message": "Enable source detection, then reload the page and try again."
+   },
+   "errBlobSource": {
+      "message": "This page's video has no address that can be cast."
+   },
+   "errCantCast": {
+      "message": "Can't cast this tab."
+   },
+   "errDrm": {
+      "message": "This stream is DRM-protected, so it can't be cast."
+   },
+   "errNoHelper": {
+      "message": "Couldn't reach the helper."
+   },
+   "errStreamExpired": {
+      "message": "The stream expired. Reload the page and cast again."
+   },
+   "errStreamUnavailable": {
+      "message": "Couldn't open this stream. It may be offline, region-locked, or unsupported."
+   },
+   "extDescription": {
+      "message": "Cast the current tab's stream to a DLNA or Google Cast device on your local network."
+   },
+   "getHelper": {
+      "message": "Get the helper"
+   },
+   "helperHint": {
+      "message": "Install the local helper, or start it and retry."
+   },
+   "helperOutdated": {
+      "message": "A new helper version is available."
+   },
+   "helperTitle": {
+      "message": "Helper not detected."
+   },
+   "manualTitle": {
+      "message": "Stream"
+   },
+   "manualToggle": {
+      "message": "Cast a stream address"
+   },
+   "needTokenHint": {
+      "message": "Paste the helper's token in the options."
+   },
+   "needTokenTitle": {
+      "message": "Token not set up."
+   },
+   "noSourceFound": {
+      "message": "No video source detected. Play the video and try again."
+   },
+   "openOptions": {
+      "message": "Open options"
+   },
+   "optionsHelp": {
+      "message": "Paste the helper's token. You'll find it in the file ~/.streaming-lan-cast/token in your home folder (the helper also prints it on startup)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast: Settings"
+   },
+   "optionsTokenLabel": {
+      "message": "Helper token"
+   },
+   "paste": {
+      "message": "Paste"
+   },
+   "pickerPrompt": {
+      "message": "Choose where to cast the current tab"
+   },
+   "qualityBest": {
+      "message": "Best available"
+   },
+   "qualityLabel": {
+      "message": "Quality"
+   },
+   "retry": {
+      "message": "Retry"
+   },
+   "rewindHere": {
+      "message": "Position"
+   },
+   "rewindStart": {
+      "message": "Start"
+   },
+   "save": {
+      "message": "Save"
+   },
+   "saved": {
+      "message": "Saved ✓"
+   },
+   "savedNoConn": {
+      "message": "Saved (helper not reachable)"
+   },
+   "savedRejected": {
+      "message": "Token rejected, not saved"
+   },
+   "searching": {
+      "message": "Searching for devices..."
+   },
+   "sourceDetected": {
+      "message": "Source detected"
+   },
+   "sourceNone": {
+      "message": "No video source detected yet"
+   },
+   "stopButton": {
+      "message": "Stop"
+   },
+   "themeAuto": {
+      "message": "Theme: automatic"
+   },
+   "themeDark": {
+      "message": "Theme: dark"
+   },
+   "themeLight": {
+      "message": "Theme: light"
+   },
+   "updateHelper": {
+      "message": "Update it"
+   }
+}

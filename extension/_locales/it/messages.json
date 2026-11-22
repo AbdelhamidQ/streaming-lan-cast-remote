@@ -1,0 +1,140 @@
+{
+   "backLive": {
+      "message": "Live"
+   },
+   "castButton": {
+      "message": "Trasmetti questa scheda"
+   },
+   "castFromStart": {
+      "message": "Dall'inizio"
+   },
+   "castUrlButton": {
+      "message": "Trasmetti questo URL"
+   },
+   "castingTo": {
+      "message": "Trasmissione su"
+   },
+   "detectEnabledReload": {
+      "message": "Rilevamento attivato. Ricarica la pagina (o avvia il video), poi trasmetti."
+   },
+   "enableDetect": {
+      "message": "Attiva il rilevamento delle sorgenti"
+   },
+   "enableDetectHint": {
+      "message": "Attiva il rilevamento delle sorgenti e ricarica la pagina."
+   },
+   "errBlobSource": {
+      "message": "Il video di questa pagina non ha un indirizzo trasmissibile."
+   },
+   "errCantCast": {
+      "message": "Impossibile trasmettere questa scheda."
+   },
+   "errDrm": {
+      "message": "Questo stream è protetto da DRM, quindi non può essere trasmesso."
+   },
+   "errNoHelper": {
+      "message": "Impossibile contattare l'helper."
+   },
+   "errStreamUnavailable": {
+      "message": "Impossibile aprire questo stream. Potrebbe essere offline, bloccato per regione o non supportato."
+   },
+   "extDescription": {
+      "message": "Trasmetti lo stream della scheda corrente a un dispositivo DLNA o Google Cast della tua rete locale."
+   },
+   "getHelper": {
+      "message": "Scarica l'helper"
+   },
+   "helperHint": {
+      "message": "Installa l'helper locale, oppure avvialo e riprova."
+   },
+   "helperOutdated": {
+      "message": "È disponibile una nuova versione dell'helper."
+   },
+   "helperTitle": {
+      "message": "Helper non rilevato."
+   },
+   "manualTitle": {
+      "message": "Flusso"
+   },
+   "manualToggle": {
+      "message": "Trasmetti un indirizzo di stream"
+   },
+   "needTokenHint": {
+      "message": "Incolla il token dell'helper nelle opzioni."
+   },
+   "needTokenTitle": {
+      "message": "Token non configurato."
+   },
+   "noSourceFound": {
+      "message": "Nessuna sorgente video rilevata. Avvia il video e riprova."
+   },
+   "openOptions": {
+      "message": "Apri opzioni"
+   },
+   "optionsHelp": {
+      "message": "Incolla il token dell'helper. Lo trovi nel file ~/.streaming-lan-cast/token nella tua cartella utente (l'helper lo mostra anche all'avvio)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast: Impostazioni"
+   },
+   "optionsTokenLabel": {
+      "message": "Token dell'helper"
+   },
+   "paste": {
+      "message": "Incolla"
+   },
+   "pickerPrompt": {
+      "message": "Scegli dove trasmettere la scheda corrente"
+   },
+   "qualityBest": {
+      "message": "Migliore disponibile"
+   },
+   "qualityLabel": {
+      "message": "Qualità"
+   },
+   "retry": {
+      "message": "Riprova"
+   },
+   "rewindHere": {
+      "message": "Posizione"
+   },
+   "rewindStart": {
+      "message": "Inizio"
+   },
+   "save": {
+      "message": "Salva"
+   },
+   "saved": {
+      "message": "Salvato ✓"
+   },
+   "savedNoConn": {
+      "message": "Salvato (helper non raggiungibile)"
+   },
+   "savedRejected": {
+      "message": "Token rifiutato, non salvato"
+   },
+   "searching": {
+      "message": "Ricerca dispositivi in corso"
+   },
+   "sourceDetected": {
+      "message": "Sorgente rilevata"
+   },
+   "sourceNone": {
+      "message": "Nessuna sorgente video rilevata"
+   },
+   "stopButton": {
+      "message": "Ferma"
+   },
+   "themeAuto": {
+      "message": "Tema: automatico"
+   },
+   "themeDark": {
+      "message": "Tema: scuro"
+   },
+   "themeLight": {
+      "message": "Tema: chiaro"
+   },
+   "updateHelper": {
+      "message": "Aggiorna"
+   }
+}

@@ -1,0 +1,140 @@
+{
+   "backLive": {
+      "message": "Live"
+   },
+   "castButton": {
+      "message": "Diesen Tab übertragen"
+   },
+   "castFromStart": {
+      "message": "Von Anfang an"
+   },
+   "castUrlButton": {
+      "message": "Diese URL übertragen"
+   },
+   "castingTo": {
+      "message": "Überträgt auf"
+   },
+   "detectEnabledReload": {
+      "message": "Erkennung aktiviert. Lade die Seite neu (oder starte das Video) und übertrage."
+   },
+   "enableDetect": {
+      "message": "Quellenerkennung aktivieren"
+   },
+   "enableDetectHint": {
+      "message": "Aktiviere die Quellenerkennung und lade die Seite neu."
+   },
+   "errBlobSource": {
+      "message": "Das Video dieser Seite hat keine übertragbare Adresse."
+   },
+   "errCantCast": {
+      "message": "Dieser Tab kann nicht übertragen werden."
+   },
+   "errDrm": {
+      "message": "Dieser Stream ist DRM-geschützt und kann nicht übertragen werden."
+   },
+   "errNoHelper": {
+      "message": "Helfer konnte nicht erreicht werden."
+   },
+   "errStreamUnavailable": {
+      "message": "Dieser Stream konnte nicht geöffnet werden. Möglicherweise ist er offline, regional gesperrt oder wird nicht unterstützt."
+   },
+   "extDescription": {
+      "message": "Übertrage den Stream des aktuellen Tabs auf ein Gerät in deinem lokalen Netzwerk (DLNA oder Google Cast)."
+   },
+   "getHelper": {
+      "message": "Helfer herunterladen"
+   },
+   "helperHint": {
+      "message": "Installiere den lokalen Helfer, oder starte ihn und versuche es erneut."
+   },
+   "helperOutdated": {
+      "message": "Eine neue Helfer-Version ist verfügbar."
+   },
+   "helperTitle": {
+      "message": "Helfer nicht erkannt."
+   },
+   "manualTitle": {
+      "message": "Stream"
+   },
+   "manualToggle": {
+      "message": "Eine Stream-Adresse übertragen"
+   },
+   "needTokenHint": {
+      "message": "Füge den Token des Helfers in den Optionen ein."
+   },
+   "needTokenTitle": {
+      "message": "Token nicht eingerichtet."
+   },
+   "noSourceFound": {
+      "message": "Keine Videoquelle erkannt. Starte das Video und versuche es erneut."
+   },
+   "openOptions": {
+      "message": "Optionen öffnen"
+   },
+   "optionsHelp": {
+      "message": "Füge den Token des Helfers ein. Du findest ihn in der Datei ~/.streaming-lan-cast/token in deinem Benutzerordner (der Helfer zeigt ihn auch beim Start an)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast: Einstellungen"
+   },
+   "optionsTokenLabel": {
+      "message": "Helfer-Token"
+   },
+   "paste": {
+      "message": "Einfügen"
+   },
+   "pickerPrompt": {
+      "message": "Wähle, wohin der aktuelle Tab übertragen werden soll"
+   },
+   "qualityBest": {
+      "message": "Beste verfügbare"
+   },
+   "qualityLabel": {
+      "message": "Qualität"
+   },
+   "retry": {
+      "message": "Erneut versuchen"
+   },
+   "rewindHere": {
+      "message": "Position"
+   },
+   "rewindStart": {
+      "message": "Anfang"
+   },
+   "save": {
+      "message": "Speichern"
+   },
+   "saved": {
+      "message": "Gespeichert ✓"
+   },
+   "savedNoConn": {
+      "message": "Gespeichert (Helfer nicht erreichbar)"
+   },
+   "savedRejected": {
+      "message": "Token abgelehnt, nicht gespeichert"
+   },
+   "searching": {
+      "message": "Suche nach Geräten ..."
+   },
+   "sourceDetected": {
+      "message": "Quelle erkannt"
+   },
+   "sourceNone": {
+      "message": "Noch keine Videoquelle erkannt"
+   },
+   "stopButton": {
+      "message": "Stopp"
+   },
+   "themeAuto": {
+      "message": "Design: automatisch"
+   },
+   "themeDark": {
+      "message": "Design: dunkel"
+   },
+   "themeLight": {
+      "message": "Design: hell"
+   },
+   "updateHelper": {
+      "message": "Aktualisieren"
+   }
+}

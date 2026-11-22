@@ -1,0 +1,140 @@
+{
+   "backLive": {
+      "message": "Direct"
+   },
+   "castButton": {
+      "message": "Diffuser cet onglet"
+   },
+   "castFromStart": {
+      "message": "Depuis le début"
+   },
+   "castUrlButton": {
+      "message": "Diffuser cette URL"
+   },
+   "castingTo": {
+      "message": "Diffusion vers"
+   },
+   "detectEnabledReload": {
+      "message": "Détection activée. Rechargez la page (ou lancez la vidéo), puis diffusez."
+   },
+   "enableDetect": {
+      "message": "Activer la détection de sources"
+   },
+   "enableDetectHint": {
+      "message": "Activez la détection de sources, puis rechargez la page."
+   },
+   "errBlobSource": {
+      "message": "La vidéo de cette page n'a pas d'adresse diffusable."
+   },
+   "errCantCast": {
+      "message": "Impossible de diffuser cet onglet."
+   },
+   "errDrm": {
+      "message": "Ce flux est protégé par DRM, il ne peut donc pas être diffusé."
+   },
+   "errNoHelper": {
+      "message": "Impossible de contacter l'assistant."
+   },
+   "errStreamUnavailable": {
+      "message": "Impossible d'ouvrir ce flux. Il est peut-être hors ligne, limité à une région ou non pris en charge."
+   },
+   "extDescription": {
+      "message": "Diffusez le flux de l'onglet actuel vers un appareil DLNA ou Google Cast de votre réseau local."
+   },
+   "getHelper": {
+      "message": "Télécharger l'assistant"
+   },
+   "helperHint": {
+      "message": "Installez l'assistant local, ou lancez-le et réessayez."
+   },
+   "helperOutdated": {
+      "message": "Une nouvelle version de l'assistant est disponible."
+   },
+   "helperTitle": {
+      "message": "Assistant non détecté."
+   },
+   "manualTitle": {
+      "message": "Flux"
+   },
+   "manualToggle": {
+      "message": "Diffuser une adresse de flux"
+   },
+   "needTokenHint": {
+      "message": "Collez le jeton de l'assistant dans les options."
+   },
+   "needTokenTitle": {
+      "message": "Jeton non configuré."
+   },
+   "noSourceFound": {
+      "message": "Aucune source vidéo détectée. Lancez la vidéo et réessayez."
+   },
+   "openOptions": {
+      "message": "Ouvrir les options"
+   },
+   "optionsHelp": {
+      "message": "Collez le jeton de l'assistant. Vous le trouverez dans le fichier ~/.streaming-lan-cast/token de votre dossier personnel (l'assistant l'affiche aussi au démarrage)."
+   },
+   "optionsTitle": {
+      "message": "Streaming LAN Cast : Paramètres"
+   },
+   "optionsTokenLabel": {
+      "message": "Jeton de l'assistant"
+   },
+   "paste": {
+      "message": "Coller"
+   },
+   "pickerPrompt": {
+      "message": "Choisissez où diffuser l'onglet actuel"
+   },
+   "qualityBest": {
+      "message": "Meilleure disponible"
+   },
+   "qualityLabel": {
+      "message": "Qualité"
+   },
+   "retry": {
+      "message": "Réessayer"
+   },
+   "rewindHere": {
+      "message": "Position"
+   },
+   "rewindStart": {
+      "message": "Début"
+   },
+   "save": {
+      "message": "Enregistrer"
+   },
+   "saved": {
+      "message": "Enregistré ✓"
+   },
+   "savedNoConn": {
+      "message": "Enregistré (assistant injoignable)"
+   },
+   "savedRejected": {
+      "message": "Jeton refusé, non enregistré"
+   },
+   "searching": {
+      "message": "Recherche d'appareils..."
+   },
+   "sourceDetected": {
+      "message": "Source détectée"
+   },
+   "sourceNone": {
+      "message": "Aucune source vidéo détectée pour l'instant"
+   },
+   "stopButton": {
+      "message": "Arrêter"
+   },
+   "themeAuto": {
+      "message": "Thème : automatique"
+   },
+   "themeDark": {
+      "message": "Thème : sombre"
+   },
+   "themeLight": {
+      "message": "Thème : clair"
+   },
+   "updateHelper": {
+      "message": "Mettre à jour"
+   }
+}
